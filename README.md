@@ -1,3 +1,5 @@
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/7e8c867d-b86d-482d-8e78-aeda2e935e0a" />
+
 # 🔍 APIProbe
 
 ## API Configuration Validator - Catch Misconfigurations Before Deployment Disasters
@@ -637,6 +639,9 @@ apiprobe list-models --provider google --api-key your_key
 3. Try with `--timeout 60` for slow connections
 
 ---
+
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/5523c79d-1edf-4719-8194-7a817433b45f" />
+
 
 ## 📝 Credits
 
