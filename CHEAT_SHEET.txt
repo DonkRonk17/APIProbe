@@ -1,0 +1,235 @@
+================================================================================
+APIPROBE CHEAT SHEET
+================================================================================
+
+QUICK START
+-----------
+1. Set API key: export GOOGLE_API_KEY=your_key
+2. List models: python apiprobe.py list-models --provider google
+3. Test model:  python apiprobe.py test-model --provider google --model gemini-2.0-flash
+
+================================================================================
+COMMANDS
+--------------------------------------------------------------------------------
+
+LIST MODELS - Query available models for a provider
+--------------------------------------------------------------------------------
+  python apiprobe.py list-models --provider google
+  python apiprobe.py list-models --provider anthropic
+  python apiprobe.py list-models --provider openai
+  python apiprobe.py list-models --provider xai
+  
+  Options:
+    --api-version v1      Use specific API version (default: v1beta for Google)
+    --api-key KEY         Override environment API key
+    --env .env            Load API key from .env file
+    --format json         Output as JSON
+    --format markdown     Output as Markdown
+
+TEST MODEL - Verify a specific model works
+--------------------------------------------------------------------------------
+  python apiprobe.py test-model --provider google --model gemini-2.0-flash
+  
+  With features:
+    --features systemInstruction,tools
+  
+  With specific API version:
+    --api-version v1
+  
+  Examples:
+    # Basic test
+    python apiprobe.py test-model --provider google --model gemini-2.0-flash
+    
+    # Test with features
+    python apiprobe.py test-model --provider google --model gemini-2.0-flash \
+      --features systemInstruction,tools
+    
+    # Test wrong API version (will fail)
+    python apiprobe.py test-model --provider google --model gemini-2.0-flash \
+      --features systemInstruction --api-version v1
+
+CONFIG DIFF - Compare DB configuration vs code
+--------------------------------------------------------------------------------
+  python apiprobe.py config-diff --db data/comms.db
+  python apiprobe.py config-diff --db data/comms.db --code backend/
+  
+  Options:
+    --db PATH             Path to SQLite database (required)
+    --code PATH           Path to code directory or file (optional)
+
+VALIDATE ALL - Full validation of all providers
+--------------------------------------------------------------------------------
+  python apiprobe.py validate-all
+  python apiprobe.py validate-all --env .env
+  python apiprobe.py validate-all --env .env --db data/comms.db
+  
+  Options:
+    --env PATH            Path to .env file with API keys
+    --db PATH             Path to database for config diff
+    --providers LIST      Comma-separated providers (google,anthropic,openai,xai)
+    --format FORMAT       Output format (table, json, markdown)
+
+================================================================================
+API KEY ENVIRONMENT VARIABLES
+--------------------------------------------------------------------------------
+
+Provider    | Primary Variable      | Fallback Variable
+------------+-----------------------+-------------------
+Google      | GOOGLE_API_KEY        | GEMINI_API_KEY
+Anthropic   | ANTHROPIC_API_KEY     | CLAUDE_API_KEY
+OpenAI      | OPENAI_API_KEY        | (none)
+xAI         | XAI_API_KEY           | GROK_API_KEY
+
+Set in terminal:
+  export GOOGLE_API_KEY=AIza...
+  export ANTHROPIC_API_KEY=sk-ant-...
+  export OPENAI_API_KEY=sk-...
+  export XAI_API_KEY=xai-...
+
+Or use .env file:
+  echo "GOOGLE_API_KEY=AIza..." > .env
+  python apiprobe.py validate-all --env .env
+
+================================================================================
+OUTPUT FORMATS
+--------------------------------------------------------------------------------
+
+Table (default):
+  python apiprobe.py list-models --provider google --format table
+
+JSON (for automation):
+  python apiprobe.py validate-all --format json > results.json
+
+Markdown (for reports):
+  python apiprobe.py validate-all --format markdown > report.md
+
+================================================================================
+PYTHON API
+--------------------------------------------------------------------------------
+
+Import:
+  from apiprobe import APIProbe
+
+Initialize:
+  probe = APIProbe()
+  probe = APIProbe(env_path=Path(".env"))
+
+List Models:
+  models = probe.list_models("google")
+  for m in models:
+      print(f"{m.name}: {m.input_token_limit} tokens")
+
+Test Model:
+  result = probe.test_model("google", "gemini-2.0-flash")
+  result = probe.test_model("google", "gemini-2.0-flash", 
+                            features=["systemInstruction", "tools"])
+  if result.success:
+      print("Model works!")
+  else:
+      print(f"Error: {result.message}")
+
+Config Diff:
+  diffs = probe.config_diff(Path("data/comms.db"))
+  for diff in diffs:
+      print(f"{diff.severity}: {diff.field}")
+
+Validate All:
+  results = probe.validate_all(providers=["google", "anthropic"])
+  passed = sum(1 for r in results if r.success)
+
+================================================================================
+COMMON SCENARIOS
+--------------------------------------------------------------------------------
+
+Scenario: Check what models are available
+  python apiprobe.py list-models --provider google
+
+Scenario: Verify model before deploying
+  python apiprobe.py test-model --provider google --model gemini-2.0-flash
+
+Scenario: Full pre-deployment validation
+  python apiprobe.py validate-all --env .env --db data/comms.db
+
+Scenario: CI/CD integration
+  python apiprobe.py validate-all --format json > results.json
+  # Then parse JSON in your CI script
+
+Scenario: Debug 404 errors
+  python apiprobe.py list-models --provider google  # See what's available
+  python apiprobe.py test-model --provider google --model YOUR_MODEL_NAME
+
+Scenario: Check feature support
+  python apiprobe.py test-model --provider google --model gemini-2.0-flash \
+    --features systemInstruction,tools --api-version v1
+  # Will show if features are supported in that API version
+
+================================================================================
+KNOWN MODEL CORRECTIONS
+--------------------------------------------------------------------------------
+
+Incorrect Name              | Correct Name        | Provider
+----------------------------+---------------------+----------
+gemini-2.0-flash-exp        | gemini-2.0-flash    | Google
+gemini-3-flash-preview      | gemini-1.5-flash    | Google
+
+APIProbe automatically detects these and suggests corrections!
+
+================================================================================
+FEATURE SUPPORT BY API VERSION
+--------------------------------------------------------------------------------
+
+GOOGLE:
+  v1:     generationConfig: YES | systemInstruction: NO  | tools: NO
+  v1beta: generationConfig: YES | systemInstruction: YES | tools: YES
+
+ANTHROPIC (v1):
+  system: YES | tools: YES | max_tokens: YES
+
+OPENAI (v1):
+  system: YES | tools: YES | functions: YES | response_format: YES
+
+XAI (v1):
+  system: YES | tools: LIMITED
+
+================================================================================
+TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+Error: "No API key found"
+  -> Set environment variable or use --env flag
+  -> Check variable name (GOOGLE_API_KEY, not GOOGLE_KEY)
+
+Error: "Model not found" (404)
+  -> Run list-models to see available models
+  -> Check for typos in model name
+  -> Model may be deprecated - check suggestions
+
+Error: "Feature not supported"
+  -> Use v1beta for Google (not v1) for full features
+  -> Remove unsupported features from request
+
+Error: "Connection failed"
+  -> Check network connection
+  -> Verify firewall allows HTTPS
+  -> Try increasing timeout
+
+================================================================================
+RESOURCES
+--------------------------------------------------------------------------------
+
+Documentation:   APIProbe/README.md
+Examples:        APIProbe/EXAMPLES.md
+Integration:     APIProbe/INTEGRATION_PLAN.md
+Quick Guides:    APIProbe/QUICK_START_GUIDES.md
+GitHub:          https://github.com/DonkRonk17/APIProbe
+
+================================================================================
+CREDITS
+--------------------------------------------------------------------------------
+
+Built by: Forge (Team Brain)
+For: Logan Smith / Metaphy LLC
+Purpose: Prevent API configuration debugging nightmares
+Date: January 28, 2026
+
+================================================================================

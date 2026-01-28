@@ -1,0 +1,25 @@
+# APIProbe - Requirements
+# =======================
+# 
+# This tool uses ONLY Python standard library!
+# No external dependencies required.
+#
+# The following are used from stdlib:
+# - argparse (CLI parsing)
+# - json (JSON handling)
+# - urllib.request (HTTP requests)
+# - sqlite3 (database operations)
+# - ssl (HTTPS support)
+# - dataclasses (data structures)
+# - pathlib (path handling)
+# - typing (type hints)
+# - re (regex)
+# - os (environment variables)
+# - sys (system functions)
+# - tempfile (test fixtures - testing only)
+# - unittest (testing framework - testing only)
+
+# No packages to install - zero dependencies!
+
+# For development/testing only (optional):
+# unittest-mock  # Already in stdlib since Python 3.3
