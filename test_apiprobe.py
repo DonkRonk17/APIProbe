@@ -44,6 +44,9 @@ from apiprobe import (
     FEATURE_SUPPORT,
 )
 
+# Prevent pytest from collecting test_model (imported from apiprobe) as a test function
+test_model.__test__ = False
+
 
 class TestEnvFileLoading(unittest.TestCase):
     """Test environment file loading functionality."""
